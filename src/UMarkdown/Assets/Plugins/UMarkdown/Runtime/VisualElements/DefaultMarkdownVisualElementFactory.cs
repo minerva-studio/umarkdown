@@ -44,6 +44,12 @@ namespace UMarkdown.VisualElements {
         /// <summary>Directory used to resolve relative image paths. Absolute paths ignore it.</summary>
         public string ImageBaseDirectory { get; set; }
 
+        /// <summary>
+        /// Resolves media:// ids to elements. Lets a host place audio, video or custom
+        /// image renderers at the exact position of the markdown node.
+        /// </summary>
+        public Func<string, VisualElement> MediaResolver { get; set; }
+
         private static readonly Dictionary<string, Texture2D> s_ImageCache = new();
 
 
@@ -130,6 +136,13 @@ namespace UMarkdown.VisualElements {
         }
 
         public override VisualElement ImageBlock(RichTextRenderer renderer, string url, string alt) {
+            if (!string.IsNullOrEmpty(url) &&
+                url.StartsWith("media://", StringComparison.Ordinal) &&
+                MediaResolver != null) {
+                var resolved = MediaResolver(url.Substring("media://".Length));
+                if (resolved != null) return resolved;
+            }
+
             var container = new VisualElement { name = "ImageBlock" };
             container.style.marginTop = 4;
             container.style.marginBottom = 8;
