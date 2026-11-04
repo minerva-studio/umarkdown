@@ -1,3 +1,12 @@
+# UMarkdown (Minerva fork)
+
+This repository is a fork of [helightdev/UMarkdown](https://github.com/helightdev/UMarkdown), maintained for the
+Minerva Codex Assistant Unity package. It adds pipe tables, image/media nodes, UI Toolkit link tags, code theme
+selection and a heading scale. See [FORK.md](FORK.md) for the full list of changes.
+
+Upstream is not expected to receive changes from this fork; fixes land here first.
+
+---
 <h1 align="left">
     UMarkdown
     <img alt="GitHub Release" src="https://img.shields.io/github/v/release/helightdev/UMarkdown">
