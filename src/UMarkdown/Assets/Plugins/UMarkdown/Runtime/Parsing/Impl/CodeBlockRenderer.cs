@@ -4,6 +4,7 @@ using ColorCode;
 using ColorCode.Styling;
 using Markdig.Syntax;
 using UMarkdown.Highlight;
+using UMarkdown.Styling;
 
 namespace UMarkdown.Parsing.Impl {
     public class CodeBlockRenderer : RichTextObjectRenderer<CodeBlock> {
@@ -23,7 +24,10 @@ namespace UMarkdown.Parsing.Impl {
             if (obj is FencedCodeBlock { Info: { Length: > 0 } } fenced) {
                 try {
                     var language = fenced.Info!;
-                    var formatter = new RichTextColorizerFormatter(StyleDictionary.DefaultLight);
+                    var palette = renderer.Style.CodeTheme == MarkdownCodeTheme.Dark
+                        ? StyleDictionary.DefaultDark
+                        : StyleDictionary.DefaultLight;
+                    var formatter = new RichTextColorizerFormatter(palette);
                     var langInstance = Languages.FindById(language);
                     if (langInstance == null) goto Default;
                     formatter.Format(buffer.ToString(), langInstance);

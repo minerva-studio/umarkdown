@@ -3,6 +3,11 @@ using UnityEngine.TextCore.Text;
 using UnityEngine.UIElements;
 
 namespace UMarkdown.Styling {
+    public enum MarkdownCodeTheme {
+        Light,
+        Dark,
+    }
+
     [UxmlObject]
     public partial class RichTextMarkdownStyle {
         /// <summary>
@@ -52,6 +57,12 @@ namespace UMarkdown.Styling {
         /// Default: 0.1f.
         /// </summary>
         [UxmlAttribute] public float CodeBackgroundOpacity { get; set; } = 0.1f;
+
+        /// <summary>
+        /// Palette used for syntax highlighting. Pick Dark for dark editor skins.
+        /// Default: Light.
+        /// </summary>
+        [UxmlAttribute] public MarkdownCodeTheme CodeTheme { get; set; } = MarkdownCodeTheme.Light;
 
         /// <summary>
         /// Reference to a TextStyleProvider instance used to obtain text and code text styles.
