@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using System.IO;
+using Markdig.Extensions.Tables;
 using Markdig.Renderers;
 using Markdig.Syntax;
 using UMarkdown.Parsing.Impl;
@@ -17,6 +19,7 @@ namespace UMarkdown.Parsing {
             ObjectRenderers.Add(new ListBlockRenderer());
             ObjectRenderers.Add(new CodeBlockRenderer());
             ObjectRenderers.Add(new BlockQuoteRenderer());
+            ObjectRenderers.Add(new TableRenderer());
 
             ObjectRenderers.Add(new EmphasisInlineRenderer());
             ObjectRenderers.Add(new LiteralInlineRenderer());
@@ -50,6 +53,17 @@ namespace UMarkdown.Parsing {
         public void PushAsCodeBlock() {
             TryPopRichText(out var str);
             _consumer.AcceptCodeBlock(this, str);
+        }
+
+        public void PushImage(string url, string alt) {
+            PushAsTextBlock();
+            _consumer.AcceptImage(this, url, alt);
+        }
+
+        public void PushTable(IReadOnlyList<IReadOnlyList<string>> rows,
+            IReadOnlyList<TableColumnAlign> alignments) {
+            PushAsTextBlock();
+            _consumer.AcceptTable(this, rows, alignments);
         }
 
         public void BeginIndent(string prefix = null) {
@@ -88,6 +102,11 @@ namespace UMarkdown.Parsing {
     public interface IRichTextConsumer {
         public void AcceptCodeBlock(RichTextRenderer renderer, string richText);
         public void AcceptTextBlock(RichTextRenderer renderer, string richText);
+        public void AcceptImage(RichTextRenderer renderer, string url, string alt);
+
+        public void AcceptTable(RichTextRenderer renderer, IReadOnlyList<IReadOnlyList<string>> rows,
+            IReadOnlyList<TableColumnAlign> alignments);
+
         public void BeginIndent(RichTextRenderer renderer, string prefix = null);
         public void EndIndent(RichTextRenderer renderer);
         public void EnsureVerticalSpace(RichTextRenderer renderer);

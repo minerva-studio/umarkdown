@@ -1,4 +1,7 @@
+using System;
 using System.Collections.Generic;
+using System.IO;
+using Markdig.Extensions.Tables;
 using UMarkdown.Parsing;
 using UMarkdown.Styling;
 using UnityEngine;
@@ -37,6 +40,11 @@ namespace UMarkdown.VisualElements {
         /// If null, the renderer's code text style is used.
         /// </summary>
         public TextStyle CodeBlockTextStyleOverride { get; set; }
+
+        /// <summary>Directory used to resolve relative image paths. Absolute paths ignore it.</summary>
+        public string ImageBaseDirectory { get; set; }
+
+        private static readonly Dictionary<string, Texture2D> s_ImageCache = new();
 
 
         public override VisualElement Compose(RichTextRenderer renderer, IReadOnlyList<VisualElement> blocks) {
@@ -119,6 +127,127 @@ namespace UMarkdown.VisualElements {
                 name = "VerticalSpacer"
             };
             return spacer;
+        }
+
+        public override VisualElement ImageBlock(RichTextRenderer renderer, string url, string alt) {
+            var container = new VisualElement { name = "ImageBlock" };
+            container.style.marginTop = 4;
+            container.style.marginBottom = 8;
+
+            var path = ResolveImagePath(url);
+            if (path != null && File.Exists(path)) {
+                var texture = LoadTexture(path);
+                if (texture != null) {
+                    var image = new Image {
+                        image = texture,
+                        scaleMode = ScaleMode.ScaleToFit,
+                        name = "Image"
+                    };
+                    image.style.maxWidth = 560;
+                    image.style.maxHeight = 400;
+                    container.Add(image);
+                    return container;
+                }
+            }
+
+            var fallback = new Label(string.IsNullOrEmpty(alt) ? url : $"{alt}  ({url})") {
+                name = "ImageFallback"
+            };
+            fallback.style.fontSize = 11;
+            fallback.style.color = renderer.Style.FontColor;
+            fallback.style.unityFontStyleAndWeight = FontStyle.Italic;
+            fallback.style.whiteSpace = WhiteSpace.Normal;
+            container.Add(fallback);
+            return container;
+        }
+
+        public override VisualElement Table(RichTextRenderer renderer, IReadOnlyList<IReadOnlyList<string>> rows,
+            IReadOnlyList<TableColumnAlign> alignments) {
+            var table = new VisualElement { name = "Table" };
+            table.style.marginTop = 4;
+            table.style.marginBottom = 8;
+
+            var border = renderer.Style.FontColor;
+            border.a = 0.18f;
+            var headerBackground = renderer.Style.FontColor;
+            headerBackground.a = 0.08f;
+
+            for (var r = 0; r < rows.Count; r++) {
+                var rowElement = new VisualElement { name = "TableRow" };
+                rowElement.style.flexDirection = FlexDirection.Row;
+                var cells = rows[r];
+                for (var c = 0; c < cells.Count; c++) {
+                    var cell = new Label(VisualElementRichTextConsumer.ToUiToolkitLinks(cells[c])) {
+                        enableRichText = true,
+                        name = "TableCell"
+                    };
+                    cell.style.flexGrow = 1;
+                    cell.style.flexBasis = 0;
+                    cell.style.paddingLeft = 8;
+                    cell.style.paddingRight = 8;
+                    cell.style.paddingTop = 4;
+                    cell.style.paddingBottom = 4;
+                    cell.style.whiteSpace = WhiteSpace.Normal;
+                    cell.style.borderTopWidth = 1;
+                    cell.style.borderTopColor = border;
+                    if (c > 0) {
+                        cell.style.borderLeftWidth = 1;
+                        cell.style.borderLeftColor = border;
+                    }
+
+                    if (r == 0) {
+                        cell.style.unityFontStyleAndWeight = FontStyle.Bold;
+                        cell.style.backgroundColor = headerBackground;
+                    }
+
+                    if (alignments != null && c < alignments.Count) {
+                        cell.style.unityTextAlign = alignments[c] switch {
+                            TableColumnAlign.Center => TextAnchor.MiddleCenter,
+                            TableColumnAlign.Right => TextAnchor.MiddleRight,
+                            _ => TextAnchor.MiddleLeft
+                        };
+                    }
+
+                    rowElement.Add(cell);
+                }
+
+                table.Add(rowElement);
+            }
+
+            return table;
+        }
+
+        private string ResolveImagePath(string url) {
+            if (string.IsNullOrEmpty(url)) return null;
+            if (url.StartsWith("file://", StringComparison.OrdinalIgnoreCase))
+                return Uri.TryCreate(url, UriKind.Absolute, out var uri) ? uri.LocalPath : null;
+            if (Path.IsPathRooted(url)) return url;
+            if (!string.IsNullOrEmpty(ImageBaseDirectory)) {
+                try {
+                    return Path.GetFullPath(Path.Combine(ImageBaseDirectory, url));
+                } catch (Exception) {
+                    return null;
+                }
+            }
+
+            return null;
+        }
+
+        private static Texture2D LoadTexture(string path) {
+            if (s_ImageCache.TryGetValue(path, out var cached)) return cached;
+            try {
+                var bytes = File.ReadAllBytes(path);
+                var texture = new Texture2D(2, 2, TextureFormat.RGBA32, false) { hideFlags = HideFlags.DontSave };
+                if (!texture.LoadImage(bytes)) {
+                    UnityEngine.Object.DestroyImmediate(texture);
+                    return null;
+                }
+
+                s_ImageCache[path] = texture;
+                return texture;
+            } catch (Exception) {
+                return null;
+            }
         }
     }
 

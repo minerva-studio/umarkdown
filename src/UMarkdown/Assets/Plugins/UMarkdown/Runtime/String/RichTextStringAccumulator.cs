@@ -1,6 +1,8 @@
+using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+using Markdig.Extensions.Tables;
 using Markdig.Helpers;
 using UMarkdown.Parsing;
 
@@ -22,6 +24,15 @@ namespace UMarkdown.String {
             inner.Append(richText.Trim());
             textStyle.End(inner);
             AppendLine(inner.ToString());
+        }
+
+        public void AcceptImage(RichTextRenderer renderer, string url, string alt) {
+            AppendLine(string.IsNullOrEmpty(alt) ? url : alt);
+        }
+
+        public void AcceptTable(RichTextRenderer renderer, IReadOnlyList<IReadOnlyList<string>> rows,
+            IReadOnlyList<TableColumnAlign> alignments) {
+            foreach (var row in rows) AppendLine(string.Join(" | ", row));
         }
 
         public void BeginIndent(RichTextRenderer renderer, string prefix = null) {

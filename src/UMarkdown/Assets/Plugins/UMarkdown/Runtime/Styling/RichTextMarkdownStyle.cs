@@ -35,6 +35,13 @@ namespace UMarkdown.Styling {
         [UxmlAttribute] public float FontSize { get; set; } = 14f;
 
         /// <summary>
+        /// Multiplier applied to header font sizes. Lower it for dense panels such as chat
+        /// transcripts, where the default 2.25x heading is too large.
+        /// Default: 1f.
+        /// </summary>
+        [UxmlAttribute] public float HeadingScale { get; set; } = 1f;
+
+        /// <summary>
         /// Default color used for regular text when no explicit color is applied.
         /// Default: Color.white.
         /// </summary>

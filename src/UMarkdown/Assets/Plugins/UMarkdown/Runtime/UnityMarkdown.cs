@@ -21,6 +21,7 @@ namespace UMarkdown {
         public static MarkdownDocument ParseDocument(string markdown) {
             return Markdown.Parse(markdown, new MarkdownPipelineBuilder()
                 .UseEmphasisExtras()
+                .UsePipeTables()
                 .Build());
         }
 

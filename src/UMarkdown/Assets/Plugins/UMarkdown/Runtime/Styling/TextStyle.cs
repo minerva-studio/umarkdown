@@ -112,7 +112,9 @@ namespace UMarkdown.Styling {
                 5 => baseFontSize * 1.125f,
                 _ => baseFontSize
             };
-            return GetDefaultTextStyle(renderer).Merge(new TextStyle { FontSize = fontSize });
+            return GetDefaultTextStyle(renderer).Merge(new TextStyle {
+                FontSize = fontSize * renderer.Style.HeadingScale
+            });
         }
     }
 }

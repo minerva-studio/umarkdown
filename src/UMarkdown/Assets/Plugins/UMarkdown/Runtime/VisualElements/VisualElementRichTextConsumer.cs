@@ -1,4 +1,7 @@
+using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
+using Markdig.Extensions.Tables;
 using UMarkdown.Parsing;
 using UnityEngine.UIElements;
 
@@ -20,8 +23,17 @@ namespace UMarkdown.VisualElements {
         }
 
         public void AcceptTextBlock(RichTextRenderer renderer, string richText) {
-            var element = _factory.TextBlock(renderer, richText.Trim());
+            var element = _factory.TextBlock(renderer, ToUiToolkitLinks(richText.Trim()));
             CurrentFrame.AddBlock(element);
+        }
+
+        public void AcceptImage(RichTextRenderer renderer, string url, string alt) {
+            CurrentFrame.AddBlock(_factory.ImageBlock(renderer, url, alt));
+        }
+
+        public void AcceptTable(RichTextRenderer renderer, IReadOnlyList<IReadOnlyList<string>> rows,
+            IReadOnlyList<TableColumnAlign> alignments) {
+            CurrentFrame.AddBlock(_factory.Table(renderer, rows, alignments));
         }
 
         public void BeginIndent(RichTextRenderer renderer, string prefix = null) {
@@ -50,6 +62,18 @@ namespace UMarkdown.VisualElements {
             var element = frame.CloseFrame(renderer, _factory);
             CurrentFrame.AddBlock(element);
             return true;
+        }
+
+        /// <summary>
+        /// UI Toolkit rich text uses &lt;link&gt;, TextMeshPro rich text uses &lt;a href&gt;.
+        /// The renderer emits the TMP form; convert it for the element based path.
+        /// </summary>
+        public static string ToUiToolkitLinks(string richText) {
+            if (string.IsNullOrEmpty(richText) || richText.IndexOf("<a href=", StringComparison.Ordinal) < 0)
+                return richText;
+
+            return Regex.Replace(richText, "<a href=\"([^\"]*)\">", "<link=\"$1\">")
+                .Replace("</a>", "</link>");
         }
     }
 
